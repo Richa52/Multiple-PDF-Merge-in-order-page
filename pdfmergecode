@@ -1,0 +1,35 @@
+ http://www.dotnetbull.com/2013/12/merging-multiple-pdfs-using-itextsharp.html
+ 
+  public ActionResult Index()
+        {
+          
+            MergePDFs(Server.MapPath("pdf/output.pdf"), Server.MapPath("pdf/Employee.pdf"),Server.MapPath("pdf/SampleExport.pdf"));
+            return View();
+        }
+ 
+ 
+ public void MergePDFs(string outPutFilePath, params string[] filesPath)
+        {
+            List<PdfReader> readerList = new List<PdfReader>();
+            foreach (string filePath in filesPath)
+            {
+                PdfReader pdfReader = new PdfReader(filePath);
+                readerList.Add(pdfReader);
+            }
+
+            //Define a new output document and its size, type
+            Document document = new Document(PageSize.A4, 0, 0, 0, 0);
+            //Create blank output pdf file and get the stream to write on it.
+            PdfWriter writer = PdfWriter.GetInstance(document, new FileStream(outPutFilePath, FileMode.Create));
+            document.Open();
+
+            foreach (PdfReader reader in readerList)
+            {
+                for (int i = 1; i <= reader.NumberOfPages; i++)
+                {
+                    PdfImportedPage page = writer.GetImportedPage(reader, i);
+                    document.Add(Image.GetInstance(page));
+                }
+            }
+            document.Close();
+        }
