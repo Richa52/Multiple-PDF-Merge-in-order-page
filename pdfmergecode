@@ -1,4 +1,5 @@
  http://www.dotnetbull.com/2013/12/merging-multiple-pdfs-using-itextsharp.html
+ http://www.codeproject.com/Articles/559380/Splitting-and-Merging-PDF-Files-in-Csharp-Using-iT
  
   public ActionResult Index()
         {
