@@ -1,0 +1,91 @@
+using iTextSharp.text;
+using iTextSharp.text.pdf;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Web.Mvc;
+
+namespace MergeMultiplePdfDemo.Controllers
+{
+    public class HomeController : Controller
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public ActionResult Index()
+        {
+            string[] PdfFiles = Directory.GetFiles(@"E:\Richa\CODE\MergeMultiplePdfDemo\MergeMultiplePdfDemo\pdf", "*.pdf");
+            MergePDFs(Server.MapPath("pdf/output1.pdf"), PdfFiles);
+
+            // MergePDFs(Server.MapPath("pdf/output.pdf"), Server.MapPath("pdf/Employee.pdf"),Server.MapPath("pdf/SampleExport.pdf"));
+            return View();
+        }
+        public void MergePDFs(string outPutFilePath, params string[] filesPath)
+        {
+            Document document = new Document(PageSize.A4, 0, 0, 0, 0);
+            try
+            {
+                Font blackFont = FontFactory.GetFont("Arial", 12, Font.NORMAL, BaseColor.BLACK);
+                List<IndexOutPdf> indexlist = new List<IndexOutPdf>();
+                List<PdfReader> readerList = new List<PdfReader>();
+                foreach (string filePath in filesPath)
+                {
+                    PdfReader pdfReader = new PdfReader(filePath);
+                    IndexOutPdf indexobj = new IndexOutPdf();
+
+                    indexobj.pdfpageCount = pdfReader.NumberOfPages;
+                    indexlist.Add(indexobj);
+                    readerList.Add(pdfReader);
+
+                    //    for (int i = 0; i < filesPath.Length; i++)
+                    //{
+
+                    // PdfReader pdfReader = new PdfReader(filesPath);
+                    // int numberOfPages = pdfReader.NumberOfPages;
+                    //  Console.WriteLine(numberOfPages);
+                    //readerList.Add(pdfReader);
+                }
+                document.Open();
+                document.NewPage();
+                document.Add(new t);
+
+                //Create blank output pdf file and get the stream to write on it.
+                PdfWriter writer = PdfWriter.GetInstance(document, new FileStream(outPutFilePath, FileMode.Create));
+                PdfContentByte cb = writer.DirectContent;
+                foreach (PdfReader reader in readerList)
+                {
+                    int n = reader.NumberOfPages;
+                    for (int i = 1; i <= reader.NumberOfPages; i++)
+                    {
+                       
+
+                        PdfImportedPage page = writer.GetImportedPage(reader, i);
+                        cb.AddTemplate(page, 0, 0);
+                        int p = 0;
+                        BaseFont bf = BaseFont.CreateFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
+                        cb.BeginText();
+                        cb.SetFontAndSize(bf, 10);
+                        cb.ShowTextAligned(PdfContentByte.ALIGN_LEFT, +p + "/" + n, 7, 44, 0);
+                        cb.EndText();
+                        document.Add(Image.GetInstance(page));
+                    }
+                }
+            }
+
+            catch (Exception ex)
+            {
+
+            }
+            finally
+            {
+                document.Close();
+            }
+        }
+        public class IndexOutPdf
+        {
+            public string pdfname { get; set; }
+            public int pdfpageCount { get; set; }
+        }
+    }
+}
