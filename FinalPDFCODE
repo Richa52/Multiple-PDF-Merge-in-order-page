@@ -1,0 +1,115 @@
+using iTextSharp.text;
+using iTextSharp.text.pdf;
+using iTextSharp.text.pdf.draw;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Web.Mvc;
+
+
+namespace MergeMultiplePdfDemo.Controllers
+{
+    public class HomeController : Controller
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public ActionResult Index()
+        {
+            string[] PdfFiles = Directory.GetFiles(@"E:\Richa\CODE\MergeMultiplePdfDemo\MergeMultiplePdfDemo\pdf", "*.pdf");
+            bool res = MergePDFs(Server.MapPath("pdf/FinalALLPDF.pdf"), PdfFiles);
+            if (res == true)
+            {
+                AddPageNumber();
+            }
+            return View();
+        }
+        public static bool MergePDFs(string outPutFilePath, params string[] filesPath)
+
+        {
+            //Define a new output document and its size, type
+            Document document = new Document(PageSize.A4, 0, 0, 0, 0);
+            bool merged = true;
+            int indexpagecount = 1;
+            try
+            {
+                List<PdfReader> readerList = new List<PdfReader>();
+                foreach (string filePath in filesPath)
+                {
+                    PdfReader pdfReader = new PdfReader(filePath);
+                    readerList.Add(pdfReader);
+                }
+                //Create blank output pdf file and get the stream to write on it.
+                PdfWriter writer = PdfWriter.GetInstance(document, new FileStream(outPutFilePath, FileMode.Create));
+                document.Open();
+                document.NewPage();
+                Paragraph p, p1,p2;
+                p1 = new Paragraph("\n\nTable of Contents\n\n");
+                p1.Alignment = Element.ALIGN_CENTER;
+                document.Add(p1);
+                Chunk dottedLine = new Chunk(new DottedLineSeparator());
+
+                for (int i = 0; i < readerList.Count; i++)
+                {
+                    Font link = FontFactory.GetFont("Arial", 12, Font.UNDERLINE, BaseColor.BLUE);
+                    int j = i + 1;
+                   
+                    p2 = new Paragraph(new Chunk("PDF" + j, link).SetAction(PdfAction.GotoLocalPage(indexpagecount + 1, new PdfDestination(PdfDestination.FITH), writer)));
+                    p2.IndentationLeft = 60;
+                    p2.IndentationRight = 60;
+                    p2.SpacingAfter = 5;
+                    p2.Add(dottedLine);
+                    p2.Add("" + indexpagecount);
+                    var pagecount = readerList[i].NumberOfPages;
+                    indexpagecount = pagecount + indexpagecount;
+                    document.Add(p2);
+                }
+                foreach (PdfReader reader in readerList)
+                {
+                    for (int i = 1; i <= reader.NumberOfPages; i++)
+                    {
+                        PdfImportedPage page = writer.GetImportedPage(reader, i);
+                        document.Add(Image.GetInstance(page));
+                    }
+                }
+
+                document.Close();
+                foreach (PdfReader reader in readerList)
+                {
+                    reader.Close();
+                }
+            }
+            catch (Exception ex)
+            {
+                merged = false;
+            }
+            return merged;
+        }
+        public void AddPageNumber()
+        {
+            byte[] bytes = System.IO.File.ReadAllBytes(Server.MapPath("pdf/FinalALLPDF.pdf"));
+            Font blackFont = FontFactory.GetFont("Arial", 12, Font.NORMAL, BaseColor.BLACK);
+            using (MemoryStream stream = new MemoryStream())
+            {
+                PdfReader reader = new PdfReader(bytes);
+                using (PdfStamper stamper = new PdfStamper(reader, stream))
+                {
+                    int j = 0;
+                    int pages = reader.NumberOfPages;
+                    for (int i = 1; i <= pages; i++)
+                    {
+                        if (i != 1)
+                        {
+                            ColumnText.ShowTextAligned(stamper.GetUnderContent(i), Element.ALIGN_RIGHT, new Phrase(j.ToString(), blackFont), 568f, 15f, 0);
+                        }
+                        j++;
+                    }
+                }
+                bytes = stream.ToArray();
+            }
+            System.IO.File.WriteAllBytes(Server.MapPath("pdf/FinalALLPDF.pdf"), bytes);
+        }
+
+    }
+}
